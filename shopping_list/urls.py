@@ -1,7 +1,6 @@
 from django.urls import path, include
 from rest_framework import routers
 
-from shopping_list.api.viewsets import ShoppingItemViewSet
 from shopping_list.api.views import (
     ListAddShoppingList,
     ShoppingListDetail,
@@ -9,11 +8,8 @@ from shopping_list.api.views import (
     ShoppingItemDetail,
 )
 
-router = routers.DefaultRouter()
-router.register('shopping-items', ShoppingItemViewSet, basename='shopping-items')
 
 urlpatterns = [
-    # path('api/', include(router.urls)),
     path('api/shopping-lists/', ListAddShoppingList.as_view(), name='all-shopping-lists'),
     path(
         'api/shopping-lists/<uuid:pk>/', ShoppingListDetail.as_view(), name='shopping-list-detail'
