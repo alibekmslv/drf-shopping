@@ -14,9 +14,9 @@ router.register('shopping-items', ShoppingItemViewSet, basename='shopping-items'
 
 urlpatterns = [
     # path('api/', include(router.urls)),
-    path('api/shopping-lists/', ListAddShoppingList.as_view(), name='all_shopping_lists'),
+    path('api/shopping-lists/', ListAddShoppingList.as_view(), name='all-shopping-lists'),
     path(
-        'api/shopping-lists/<uuid:pk>/', ShoppingListDetail.as_view(), name='shopping_list_detail'
+        'api/shopping-lists/<uuid:pk>/', ShoppingListDetail.as_view(), name='shopping-list-detail'
     ),
     path(
         'api/shopping-lists/<uuid:pk>/shopping-items/',
