@@ -10,6 +10,7 @@ from shopping_list.api.views import (
 
 
 urlpatterns = [
+    path('api-auth', include('rest_framework.urls', namespace='rest_framework')),
     path('api/shopping-lists/', ListAddShoppingList.as_view(), name='all-shopping-lists'),
     path(
         'api/shopping-lists/<uuid:pk>/', ShoppingListDetail.as_view(), name='shopping-list-detail'
