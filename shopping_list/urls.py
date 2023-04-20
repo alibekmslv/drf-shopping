@@ -4,7 +4,7 @@ from rest_framework import routers
 from shopping_list.api.views import (
     ListAddShoppingList,
     ShoppingListDetail,
-    AddShoppingItem,
+    ListAddShoppingItem,
     ShoppingItemDetail,
 )
 
@@ -17,8 +17,8 @@ urlpatterns = [
     ),
     path(
         'api/shopping-lists/<uuid:pk>/shopping-items/',
-        AddShoppingItem.as_view(),
-        name='add-shopping-item',
+        ListAddShoppingItem.as_view(),
+        name='list-add-shopping-item',
     ),
     path(
         'api/shopping-lists/<uuid:pk>/shopping-items/<uuid:item_pk>/',
