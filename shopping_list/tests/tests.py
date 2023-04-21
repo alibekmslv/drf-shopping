@@ -932,3 +932,174 @@ def test_remove_members_wrong_data(create_user, create_authenticated_client, cre
     response = client_alice.put(url, data=data, format='json')
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_search_returns_corresponding_items(
+    create_user, create_authenticated_client, create_shopping_item
+):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+
+    create_shopping_item(name='Chocolate', user=user_alice)
+    create_shopping_item(name='Skim milk', user=user_alice)
+
+    search_param = "?search=milk"
+    url = reverse("search-shopping-items") + search_param
+
+    response = client_alice.get(url)
+
+    assert len(response.data['results']) == 1
+    assert response.data['results'][0]['name'] == 'Skim milk'
+
+
+@pytest.mark.django_db
+def test_search_returns_only_users_results(
+    create_user, create_authenticated_client, create_shopping_item
+):
+    user_alice = create_user()
+    user_charlie = create_user(username='charlie')
+
+    create_shopping_item(name='Milk', user=user_alice)
+    create_shopping_item(name='Milk', user=user_charlie)
+
+    client_charlie = create_authenticated_client(user=user_charlie)
+
+    search_param = "?search=milk"
+    url = reverse("search-shopping-items") + search_param
+
+    response = client_charlie.get(url)
+
+    assert len(response.data['results']) == 1
+
+
+@pytest.mark.django_db
+def test_order_shopping_items_names_ascending(
+    create_user,
+    create_authenticated_client,
+    create_shopping_list,
+    create_shopping_item_and_add_to_shopping_list,
+):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+
+    shopping_list = create_shopping_list(user=user_alice)
+
+    create_shopping_item_and_add_to_shopping_list(
+        name='Bananas', user=user_alice, shopping_list=shopping_list
+    )
+    create_shopping_item_and_add_to_shopping_list(
+        name='Apples', user=user_alice, shopping_list=shopping_list
+    )
+
+    order_param = "?ordering=name"
+    url = reverse('list-add-shopping-item', args=[shopping_list.id]) + order_param
+
+    response = client_alice.get(url)
+
+    assert response.data['results'][0]['name'] == 'Apples'
+    assert response.data['results'][1]['name'] == 'Bananas'
+
+
+@pytest.mark.django_db
+def test_order_shopping_items_names_descending(
+    create_user,
+    create_authenticated_client,
+    create_shopping_list,
+    create_shopping_item_and_add_to_shopping_list,
+):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+
+    shopping_list = create_shopping_list(user=user_alice)
+
+    create_shopping_item_and_add_to_shopping_list(
+        name='Apples', user=user_alice, shopping_list=shopping_list
+    )
+    create_shopping_item_and_add_to_shopping_list(
+        name='Bananas', user=user_alice, shopping_list=shopping_list
+    )
+
+    order_param = "?ordering=-name"
+    url = reverse('list-add-shopping-item', args=[shopping_list.id]) + order_param
+
+    response = client_alice.get(url)
+
+    assert response.data['results'][0]['name'] == 'Bananas'
+    assert response.data['results'][1]['name'] == 'Apples'
+
+
+@pytest.mark.django_db
+def test_order_shopping_items_unpurchased_first(
+    create_user,
+    create_authenticated_client,
+    create_shopping_list,
+    create_shopping_item_and_add_to_shopping_list,
+):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+
+    shopping_list = create_shopping_list(user=user_alice)
+
+    ShoppingItem.objects.create(name="Apples", purchased=False, shopping_list=shopping_list)
+    ShoppingItem.objects.create(name="Bananas", purchased=True, shopping_list=shopping_list)
+
+    order_param = "?ordering=purchased"
+    url = reverse('list-add-shopping-item', args=[shopping_list.id]) + order_param
+
+    response = client_alice.get(url)
+
+    assert response.data['results'][0]['name'] == 'Apples'
+    assert response.data['results'][1]['name'] == 'Bananas'
+
+
+@pytest.mark.django_db
+def test_order_shopping_items_purchased_first(
+    create_user,
+    create_authenticated_client,
+    create_shopping_list,
+    create_shopping_item_and_add_to_shopping_list,
+):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+
+    shopping_list = create_shopping_list(user=user_alice)
+
+    ShoppingItem.objects.create(name="Apples", purchased=False, shopping_list=shopping_list)
+    ShoppingItem.objects.create(name="Bananas", purchased=True, shopping_list=shopping_list)
+
+    order_param = "?ordering=-purchased"
+    url = reverse('list-add-shopping-item', args=[shopping_list.id]) + order_param
+
+    response = client_alice.get(url)
+
+    assert response.data['results'][0]['name'] == 'Bananas'
+    assert response.data['results'][1]['name'] == 'Apples'
+
+
+@pytest.mark.django_db
+def test_order_shopping_items_purchased_and_names(
+    create_user,
+    create_authenticated_client,
+    create_shopping_list,
+    create_shopping_item_and_add_to_shopping_list,
+):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+
+    shopping_list = create_shopping_list(user=user_alice)
+
+    ShoppingItem.objects.create(name="Apples", purchased=True, shopping_list=shopping_list)
+    ShoppingItem.objects.create(name="Bananas", purchased=False, shopping_list=shopping_list)
+    ShoppingItem.objects.create(name="Coconut", purchased=True, shopping_list=shopping_list)
+    ShoppingItem.objects.create(name="Dates", purchased=False, shopping_list=shopping_list)
+
+    order_param = "?ordering=purchased,names"
+    url = reverse('list-add-shopping-item', args=[shopping_list.id]) + order_param
+
+    response = client_alice.get(url)
+
+    assert response.data['results'][0]['name'] == 'Bananas'
+    assert response.data['results'][1]['name'] == 'Dates'
+    assert response.data['results'][2]['name'] == 'Apples'
+    assert response.data['results'][3]['name'] == 'Coconut'

@@ -8,12 +8,14 @@ from shopping_list.api.views import (
     ShoppingItemDetail,
     ShoppingListAddMembers,
     ShoppingListRemoveMembers,
+    SearchShoppingItems,
 )
 
 
 urlpatterns = [
     path('api-auth', include('rest_framework.urls', namespace='rest_framework')),
     path('api-token-auth/', obtain_auth_token, name='api-token-auth'),
+    path('api/search-shopping-items/', SearchShoppingItems.as_view(), name='search-shopping-items'),
     path('api/shopping-lists/', ListAddShoppingList.as_view(), name='all-shopping-lists'),
     path(
         'api/shopping-lists/<uuid:pk>/', ShoppingListDetail.as_view(), name='shopping-list-detail'

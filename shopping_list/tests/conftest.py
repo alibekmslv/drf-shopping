@@ -18,6 +18,18 @@ def create_shopping_item():
     return _create_shopping_item
 
 
+@pytest.fixture(scope='session')
+def create_shopping_item_and_add_to_shopping_list():
+    def _create_shopping_item_to_existing_shopping_list(name, user, shopping_list):
+        shopping_item = ShoppingItem.objects.create(
+            name=name, purchased=False, shopping_list=shopping_list
+        )
+
+        return shopping_item
+
+    return _create_shopping_item_to_existing_shopping_list
+
+
 @pytest.fixture(scope="session")
 def create_user():
     def _create_user(username='alice'):
