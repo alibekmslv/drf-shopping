@@ -1,7 +1,7 @@
 import pytest
+from django.urls import reverse
 from rest_framework.test import APIClient
-from django.contrib.auth.models import User
-from shopping_list.models import ShoppingItem, ShoppingList
+from shopping_list.models import ShoppingItem, ShoppingList, User
 
 
 @pytest.fixture(scope='session')
@@ -37,6 +37,25 @@ def create_authenticated_client():
         return client
 
     return _create_authenticated_client
+
+
+@pytest.fixture(scope="session")
+def create_token_authenticated_client():
+    def _create_token_authenticated_client(user, password='foo'):
+        client = APIClient()
+        token_url = reverse('api-token-auth')
+        data = {
+            'username': user.username,
+            'password': password,
+        }
+
+        token_response = client.post(token_url, data=data, format='json')
+        token = token_response.data['token']
+        client.credentials(HTTP_AUTHORIZATION=f'Token {token}')
+
+        return client
+
+    return _create_token_authenticated_client
 
 
 @pytest.fixture(scope="session")

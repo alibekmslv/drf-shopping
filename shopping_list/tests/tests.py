@@ -2,13 +2,10 @@ from datetime import datetime, timedelta
 from unittest import mock
 import pytest
 from django.urls import reverse
-from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APIClient
 
-from shopping_list.models import ShoppingList, ShoppingItem
-
-# from tests.conftest import create_shopping_item
+from shopping_list.models import ShoppingList, ShoppingItem, User
 
 
 @pytest.mark.django_db
@@ -822,3 +819,116 @@ def test_shopping_lists_order_changed_when_item_marked_purchased(
 
     assert response.data['results'][0]['name'] == 'Older'
     assert response.data['results'][1]['name'] == 'Recent'
+
+
+@pytest.mark.django_db
+def test_add_members_list_member(create_user, create_authenticated_client, create_shopping_list):
+    user_alice = create_user()
+    client = create_authenticated_client(user=user_alice)
+    shopping_list = create_shopping_list(user=user_alice)
+
+    user_bob = create_user(username='bob')
+    user_charlie = create_user(username='charlie')
+
+    data = {'members': [user_bob.id, user_charlie.id]}
+
+    url = reverse('shopping-list-add-members', args=[shopping_list.id])
+
+    response = client.put(url, data=data, format='json')
+
+    assert len(response.data['members']) == 3
+    assert user_alice.id in response.data['members']
+    assert user_bob.id in response.data['members']
+    assert user_charlie.id in response.data['members']
+
+
+@pytest.mark.django_db
+def test_add_members_not_list_member(
+    create_user, create_authenticated_client, create_shopping_list
+):
+    user_alice = create_user()
+    shopping_list = create_shopping_list(user=user_alice)
+
+    user_charlie = create_user(username='charlie')
+    client_charlie = create_authenticated_client(user=user_charlie)
+
+    data = {'members': [user_charlie.id]}
+
+    url = reverse('shopping-list-add-members', args=[shopping_list.id])
+
+    response = client_charlie.put(url, data=data, format='json')
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+def test_add_members_wrong_data(create_user, create_authenticated_client, create_shopping_list):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+    shopping_list = create_shopping_list(user=user_alice)
+
+    data = {'members': [777]}
+
+    url = reverse('shopping-list-add-members', args=[shopping_list.id])
+
+    response = client_alice.put(url, data=data, format='json')
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+
+
+@pytest.mark.django_db
+def test_remove_members_list_member(create_user, create_authenticated_client, create_shopping_list):
+    user_alice = create_user()
+    user_bob = create_user(username='bob')
+    user_charlie = create_user(username='charlie')
+
+    client_alice = create_authenticated_client(user=user_alice)
+    shopping_list = create_shopping_list(user=user_alice)
+
+    shopping_list.members.add(user_bob)
+    shopping_list.members.add(user_charlie)
+
+    data = {'members': [user_charlie.id]}
+
+    url = reverse('shopping-list-remove-members', args=[shopping_list.id])
+
+    response = client_alice.put(url, data=data, format='json')
+
+    assert len(response.data['members']) == 2
+    assert user_alice.id in response.data['members']
+    assert user_bob.id in response.data['members']
+    assert user_charlie.id not in response.data['members']
+
+
+@pytest.mark.django_db
+def test_remove_members_not_list_member(
+    create_user, create_authenticated_client, create_shopping_list
+):
+    user_alice = create_user()
+    shopping_list = create_shopping_list(user=user_alice)
+
+    user_charlie = create_user(username='charlie')
+    client_charlie = create_authenticated_client(user=user_charlie)
+
+    data = {'members': [user_alice.id]}
+
+    url = reverse('shopping-list-remove-members', args=[shopping_list.id])
+
+    response = client_charlie.put(url, data=data, format='json')
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+@pytest.mark.django_db
+def test_remove_members_wrong_data(create_user, create_authenticated_client, create_shopping_list):
+    user_alice = create_user()
+    client_alice = create_authenticated_client(user=user_alice)
+    shopping_list = create_shopping_list(user=user_alice)
+
+    data = {'members': [777]}
+
+    url = reverse('shopping-list-remove-members', args=[shopping_list.id])
+
+    response = client_alice.put(url, data=data, format='json')
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
