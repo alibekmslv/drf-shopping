@@ -1,4 +1,5 @@
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework import routers
 from rest_framework.authtoken.views import obtain_auth_token
 from shopping_list.api.views import (
@@ -40,4 +41,6 @@ urlpatterns = [
         ShoppingItemDetail.as_view(),
         name='shopping-item-detail',
     ),
+    path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
+    path('api/docs/', SpectacularSwaggerView.as_view(url_name="schema"), name='swagger-ui'),
 ]

@@ -1,5 +1,10 @@
+from typing import List, TypedDict
 from rest_framework import serializers
 from shopping_list.models import ShoppingItem, ShoppingList, User
+
+
+class UnpurchasedItems(TypedDict):
+    name: str
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,7 +37,7 @@ class ShoppingListSerializer(serializers.ModelSerializer):
         model = ShoppingList
         fields = ['id', 'name', 'unpurchased_items', 'members', 'last_interaction']
 
-    def get_unpurchased_items(self, obj):
+    def get_unpurchased_items(self, obj) -> List[UnpurchasedItems]:
         return [
             {'name': shopping_item.name}
             for shopping_item in obj.shopping_items.filter(purchased=False)
